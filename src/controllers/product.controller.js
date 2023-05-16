@@ -42,7 +42,12 @@ module.exports = {
       return res.status(200).json(RESPONSE);
     } catch (error) {}
   },
-  getProductById: async (req, res) => {},
+  getProductById: async (req, res) => {
+    const PRODUCT_ID = req.params.id;
+    const product = await getProductById(PRODUCT_ID);
+
+    return res.status(200).json(product);
+  },
   createProduct: async (req, res) => {},
   updateProduct: async (req, res) => {},
   deleteProduct: async (req, res) => {},

@@ -20,8 +20,7 @@ const validate = (req, res, next) => {
   if (errors.isEmpty()) {
     return next();
   }
-  const extractedErrors = [];
-  errors.array().map((err) => extractedErrors.push({ [err.param]: err.msg }));
+  const extractedErrors = errors.mapped();
 
   return res.status(422).json({
     errors: extractedErrors,
