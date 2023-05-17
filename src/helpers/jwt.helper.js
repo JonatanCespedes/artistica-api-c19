@@ -12,10 +12,10 @@ const generateToken = (user) => {
     }
     const payload = {
         user: USER_DATA,
-        exp: Date.now() + 60 * 10000,
+        exp: Date.now() + 60 * 1000000,
     }
 
-    const token = jwt.sign({user}, secret);
+    const token = jwt.sign({payload}, secret);
 
     return token;
   } catch (error) {
