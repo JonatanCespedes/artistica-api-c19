@@ -1,11 +1,6 @@
 const jwt = require("jsonwebtoken");
 const process = require("process");
 const secret = process.env.JWT_SECRET;
-/* const generateToken = (user) => {
-  const token = jwt.sign({ userId: user.id }, "artisticadali", { expiresIn: 60 * 60 });
-  return token;
-};
- */
 
 const generateToken = (user) => {
 
@@ -21,7 +16,7 @@ const generateToken = (user) => {
     }
 
     const token = jwt.sign({user}, secret);
-    
+
     return token;
   } catch (error) {
     console.error("Error al generar el token:", error);
