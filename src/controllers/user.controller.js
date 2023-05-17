@@ -1,10 +1,13 @@
+const { generateToken } = require("../helpers/jwt.helper");
 const {
   getUsers,
   getUserById,
   insertUser,
   updateUser,
   deleteUser,
+  getUserByEmail,
 } = require("../services/user.service");
+const bcrypt = require("bcrypt");
 
 module.exports = {
   getUsers: async (req, res) => {
@@ -52,7 +55,10 @@ module.exports = {
   },
   createUser: async (req, res) => {
     try {
-      const result = await insertUser({ ...req.body });
+      const result = await insertUser({ 
+        ...req.body,
+        pass: bcrypt.hashSync(req.body.pass, 10)
+       });
 
       if (result) {
         const SUCCESS_RESPONSE = "User created successfully";
@@ -65,7 +71,17 @@ module.exports = {
       return res.status(500).json({ Error: error });
     }
   },
+  login: async (req, res) => {
+    try {
+      const { email } = req.body;
+      const user = await getUserByEmail(email);
+      const token = generateToken(user);
+
+      return res.status(200).json({token})
+    } catch (error) {
+      return res.status(500).json({ Error: "Token error " + error });
+    }
+  },
   updateUser: async (req, res) => {},
   deleteUser: async (req, res) => {},
-  login: async (req, res) => {},
 };
