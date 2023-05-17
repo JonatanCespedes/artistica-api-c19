@@ -1,14 +1,65 @@
 const { Order } = require("../database/models");
 
 const getOrders = async () => {
-    return await Order.findAll();
+  return await Order.findAll();
 };
 
 const getOrderById = async (id) => {
-    return await Order.findByPk(id);
+  return await Order.findByPk(id);
+};
+
+/* getOrdersByUser */
+const getOrderByUser = (userId) => {
+  return Order.findOne({
+    where: {
+      userId,
+    },
+    include: [
+      { association: "orderItems", include: [{ association: "products" }] },
+    ],
+  });
+};
+
+const insertOrder = async (data) => {
+    try {
+        return await Order.create(data);
+    } catch (error) {
+        console.error("Error while fetching order :", error);
+        throw new Error("Error fetching order ");
+    }
+};
+
+const updateOrder = async (data, Id) => {
+    try {
+        return await Order.create(data, {
+            where: {
+                id: Id
+            }
+        });
+    } catch (error) {
+        console.error("Error while fetching order :", error);
+        throw new Error("Error fetching order ");
+    }
+};
+
+const deleteOrder = async (id) => {
+    try {
+        return await Order.destroy({
+            where: {
+                id
+            }
+        });
+    } catch (error) {
+        console.error("Error while fetching order :", error);
+        throw new Error("Error fetching order ");
+    }
 };
 
 module.exports = {
-    getOrders, 
-    getOrderById
+  getOrders,
+  getOrderById,
+  getOrderByUser,
+  insertOrder,
+  updateOrder,
+  deleteOrder
 };
