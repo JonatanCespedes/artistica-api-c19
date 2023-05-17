@@ -43,7 +43,7 @@ const insertOrderItem = async (data) => {
 
 const updateOrderItem = async (data, itemId) => {
     try {
-        return await OrderItem.create(data, {
+        return await OrderItem.update(data, {
             where: {
                 id: itemId
             }

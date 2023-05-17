@@ -8,7 +8,6 @@ const getOrderById = async (id) => {
   return await Order.findByPk(id);
 };
 
-/* getOrdersByUser */
 const getOrderByUser = (userId) => {
   return Order.findOne({
     where: {
