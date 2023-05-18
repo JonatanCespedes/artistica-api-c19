@@ -21,12 +21,12 @@ module.exports = {
       const orders = await getOrders();
       const RESPONSE = {
         count: orders.length,
-        orders
-      }
+        orders,
+      };
       return res.status(200).json(RESPONSE);
     } catch (error) {
       console.error(error);
-      res.status(500).json({error});
+      res.status(500).json({ error });
     }
   },
   getOrderById: async (req, res) => {
@@ -36,20 +36,92 @@ module.exports = {
       return res.status(200).json(order);
     } catch (error) {
       console.error(error);
-      res.status(500).json({error});
+      res.status(500).json({ error });
     }
   },
   getOrderByUser: async (req, res) => {
-    const { id } = req.user
-    return res.json(id)
+    try {
+      const { id } = req.user;
+      const order = await getOrderByUser(id);
+
+      let response;
+
+      if (order) {
+        return res.status(200).json(order);
+      } else {
+        response = `El usuario ${id} no tiene orden creada`;
+        return res.status(400).json(response);
+      }
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error });
+    }
   },
   addToOrder: async (req, res) => {
-    // id usuario
-    // id orden
-    // id producto + quantity
-    // Verificar si existe una orden para el usuario
-    // Si existe una orden, agregar el item
-    // Si No existe una orden, crear la orden y agregar el item
+    try {
+      // id usuario
+      const { id: userId } = req.user;
+      // Verificar si existe una orden para el usuario
+      const order = await getOrderByUser(userId);
+
+      // id producto + quantity
+      const { productId, quantity } = req.body;
+
+      if (order) {
+        // Si existe una orden, agregar el item
+        // id orden
+        const { id } = order;
+        let orderItemData;
+        // Obtener todos los productos de la order
+        const itemsFromOrder = await getOrderItemsByOrder(id);
+        // Busco el producto en la lista
+        const itemToAdd = itemsFromOrder?.find(
+          (item) => item.productId === productId
+        );
+
+        if (itemToAdd) {
+          // Si el item que voy a agregar existe en la orden, incremento el valor de quantity
+          orderItemData = {
+            productId: itemToAdd.productId,
+            orderId: itemToAdd.orderId,
+            quantity: itemToAdd.quantity + 1,
+          };
+
+          const updateOrderItemFetch = await updateOrderItem(
+            orderItemData,
+            itemToAdd.id
+          );
+
+          return res.status(200).json("Producto modificado")
+        } else {
+          // Si el item que voy a agregar NO existe en la orden, lo agrego con quantity 1
+          orderItemData = {
+            productId,
+            orderId: id,
+            quantity: 1,
+          };
+
+          const createOrdenItemInOrder = await insertOrderItem(orderItemData);
+
+          return res.status(201).json("Producto Agregado")
+        }
+      } else {
+        // Si No existe una orden, crear la orden y agregar el item
+        const data = {
+          userId: userId,
+          state: "PENDIENTE"
+        }
+        const createdOrder = await insertOrder(data);
+        let orderItemData = {
+          productId,
+          orderId: createdOrder.id,
+          quantity: 1,
+        };
+        const createOrdenItemInOrder = await insertOrderItem(orderItemData);
+
+        res.status(201).json("Orden creada, e item agregado")
+      }
+    } catch (error) {}
   },
   removeOneItemFromOrder: async (req, res) => {
     // id usuario

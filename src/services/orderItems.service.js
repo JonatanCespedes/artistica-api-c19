@@ -20,7 +20,7 @@ const getOrderItemById = async (id) => {
 
 const getOrderItemsByOrder = async (orderId) => {
   try {
-    return await OrderItem.findOne({
+    return await OrderItem.findAll({
       where: {
         orderId,
       },
