@@ -13,6 +13,7 @@ const {
   getOrdersItems,
   insertOrderItem,
   updateOrderItem,
+  bulkDeleteOrderItems,
 } = require("../services/orderItems.service");
 
 module.exports = {
@@ -92,7 +93,7 @@ module.exports = {
             itemToAdd.id
           );
 
-          return res.status(200).json("Producto modificado")
+          return res.status(200).json("Producto modificado");
         } else {
           // Si el item que voy a agregar NO existe en la orden, lo agrego con quantity 1
           orderItemData = {
@@ -103,14 +104,14 @@ module.exports = {
 
           const createOrdenItemInOrder = await insertOrderItem(orderItemData);
 
-          return res.status(201).json("Producto Agregado")
+          return res.status(201).json("Producto Agregado");
         }
       } else {
         // Si No existe una orden, crear la orden y agregar el item
         const data = {
           userId: userId,
-          state: "PENDIENTE"
-        }
+          state: "PENDIENTE",
+        };
         const createdOrder = await insertOrder(data);
         let orderItemData = {
           productId,
@@ -119,28 +120,112 @@ module.exports = {
         };
         const createOrdenItemInOrder = await insertOrderItem(orderItemData);
 
-        res.status(201).json("Orden creada, e item agregado")
+        res.status(201).json("Orden creada, e item agregado");
       }
-    } catch (error) {}
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error });
+    }
   },
   removeOneItemFromOrder: async (req, res) => {
-    // id usuario
-    // id orden
-    // id item
-    // Si el item en el campo quatity tiene mas de 1, actualizo la cantidad (+1)
-    // Si el item en el campo quantity tiene 1, elimino el item
+    try {
+      // id item
+      const { itemId } = req.params;
+
+      const item = await getOrderItemById(itemId);
+
+      if (!item) return res.status(400).json(`El item ${itemId} no existe`);
+
+      if (item.quantity > 1) {
+        // Si el item en el campo quatity tiene mas de 1, actualizo la cantidad (-1)
+        const updatedItem = {
+          ...item,
+          quantity: item.quantity - 1,
+        };
+
+        const updateItemResult = await updateOrderItem(updatedItem, itemId);
+
+        return updateItemResult
+          ? res.status(200).json("Item actualizado correctamente")
+          : res.status(400).json("Hubo un problema al actualizar el item");
+      }
+
+      if (item.quantity === 1) {
+        // Si el item en el campo quantity tiene 1, elimino el item
+        const itemDeleteResult = await deleteOrderItem(itemId);
+        const itemsOrder = await getOrderItemsByOrder(item.orderId);
+
+        const orderHaveMoreItems = itemsOrder.length > 0;
+
+        if (!orderHaveMoreItems) {
+          // si la orden no tiene mas items asignados, elimino la orden
+          const orderDeleteResult = await deleteOrder(item.orderId);
+
+          return itemDeleteResult && orderDeleteResult
+            ? res.status(200).json("Item y orden eliminados correctamente")
+            : res
+                .status(400)
+                .json("Hubo un problema al eliminar el item o la orden");
+        }
+
+        return itemDeleteResult
+          ? res.status(200).json("Item eliminado correctamente")
+          : res.status(400).json("Hubo un problema al eliminar el item");
+      }
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error });
+    }
   },
   removeAllFromOrder: async (req, res) => {
-    // id usuario
-    // id orden
-    // id item
-    // Si la orden tiene mas de 1 item, elimino el item
-    // Si la orden tiene 1 item, elimino el item, elimino la orden
+    try {
+      // id item
+      const { itemId } = req.params;
+
+      const item = await getOrderItemById(itemId);
+
+      if (!item) return res.status(400).json(`El item ${itemId} no existe`);
+
+      const itemsOrder = await getOrderItemsByOrder(item.orderId);
+
+      const orderHaveMoreOfOneItem = itemsOrder.length > 1;
+
+      const itemDeleteResult = await deleteOrderItem(itemId);
+
+      if (orderHaveMoreOfOneItem) {
+        // Si la orden tiene mas de 1 item, elimino el item\
+        return itemDeleteResult
+          ? res.status(200).json("Item eliminado correctamente")
+          : res.status(400).json("Hubo un problema al querer eliminar el item");
+      } else {
+        // Si la orden tiene 1 item, elimino el item, elimino la orden
+        const orderDeleteResult = await deleteOrder(item.orderId);
+        return itemDeleteResult && orderDeleteResult
+          ? res.status(200).json("Item y orden eliminados correctamente")
+          : res
+              .status(400)
+              .json("Hubo un problema al querer eliminar el item o la orden");
+      }
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error });
+    }
   },
   clearOrder: async (req, res) => {
-    // id usuario
-    // id orden
-    // Elimino los items de la orden
-    // Elimino la orden
+    try {
+      // id orden
+      const { orderId } = req.params;
+      // Elimino los items de la orden
+      const itemsDeleteResult = await bulkDeleteOrderItems(orderId);
+      // Elimino la orden
+      const orderDeleteResult = await deleteOrder(orderId);
+
+      return itemsDeleteResult && orderDeleteResult
+        ? res.status(200).json("Orden eliminada correctamente")
+        : res.status(400).json("Hubo un error al eliminar la orden");
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error });
+    }
   },
 };
