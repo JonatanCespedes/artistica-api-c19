@@ -104,7 +104,7 @@ module.exports = {
 
           const createOrdenItemInOrder = await insertOrderItem(orderItemData);
 
-          return res.status(201).json("Producto Agregado");
+          return res.status(201).json("Producto Agregado a la orden " + id);
         }
       } else {
         // Si No existe una orden, crear la orden y agregar el item
